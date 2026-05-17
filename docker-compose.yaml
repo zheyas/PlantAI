@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   plantai:
     build: .
@@ -7,8 +5,8 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - YANDEX_DISK_TOKEN=${YANDEX_DISK_TOKEN}   # пробрасываем из .env или переменных окружения
+      - YANDEX_DISK_TOKEN=${YANDEX_DISK_TOKEN}
     volumes:
-      - ./static:/app/static   # чтобы сохранять загруженные изображения и результаты
-      - ./ml_models:/app/ml_models   # если хотите использовать уже скачанные модели
+      - ./static:/app/static
+      - ./ml_models:/app/ml_models
     restart: unless-stopped

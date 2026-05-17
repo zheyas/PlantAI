@@ -9,33 +9,31 @@ from tqdm import tqdm
 from dotenv import load_dotenv
 import logging
 
-load_dotenv()  # загружаем .env в переменные окружения
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# ------------------ НАСТРОЙКИ ------------------
 YANDEX_TOKEN = os.getenv("YANDEX_DISK_TOKEN")
-REMOTE_DIR = "/PlantAI_models"          # путь к папке на Яндекс.Диске
+REMOTE_DIR = "/PlantAI_models"
 LOCAL_DIR = Path(__file__).parent / "ml_models"
-# -----------------------------------------------
 
 def download_folder(client, remote_path: str, local_path: Path):
-    """Рекурсивно скачивает папку с Яндекс.Диска."""
     local_path.mkdir(parents=True, exist_ok=True)
 
     for item in client.listdir(remote_path):
-        remote_item = f"{remote_path}/{item['name']}"
-        local_item = local_path / item['name']
+        remote_item = f"{remote_path}/{item.name}"
+        local_item = local_path / item.name
 
-        if item['type'] == 'dir':
+        if item.type == 'dir':
             logger.info(f"📁 Вход в папку: {remote_item}")
             download_folder(client, remote_item, local_item)
         else:
             if local_item.exists():
-                logger.info(f"⏭️  Файл уже существует: {local_item.name}")
+                logger.info(f"⏭️  Файл уже существует: {item.name}")
                 continue
-            logger.info(f"⬇️  Скачивание: {item['name']} ({item.get('size', '?')} байт)")
+            size_info = getattr(item, 'size', '?')
+            logger.info(f"⬇️  Скачивание: {item.name} ({size_info} байт)")
             client.download(remote_item, str(local_item))
 
 def main():

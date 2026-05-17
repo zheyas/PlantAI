@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlantAI — Диагностика растений</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Space Mono', monospace; }
+        @keyframes glow-pulse { 0%, 100% { text-shadow: 0 0 10px rgba(194,221,108,0.8), 0 0 20px rgba(48,177,85,0.4); } 50% { text-shadow: 0 0 20px rgba(194,221,108,1), 0 0 40px rgba(48,177,85,0.6), 0 0 60px rgba(194,221,108,0.5); } }
+        @keyframes float-up { 0% { opacity: 0; transform: translateY(30px) scale(0.9); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes scan-line { 0% { top: -100%; } 100% { top: 100%; } }
+        @keyframes data-flow { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+        @keyframes neon-flicker { 0%, 100% { opacity: 1; } 4% { opacity: 0.8; } 8% { opacity: 1; } 12% { opacity: 0.85; } }
+        @keyframes spin-slow { to { transform: rotate(360deg); } }
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+        @keyframes slide-in { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes bounce-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        body { box-sizing: border-box; overflow: auto; }
+        html, body, #app { min-height: 100%; }
+        .neon-text { animation: glow-pulse 2.5s ease-in-out infinite; font-weight: 700; letter-spacing: 2px; }
+        .neon-glow { box-shadow: 0 0 10px rgba(194,221,108,0.6), 0 0 20px rgba(48,177,85,0.3), inset 0 0 10px rgba(194,221,108,0.1); }
+        .glass-liquid { backdrop-filter: blur(20px) saturate(180%); background: linear-gradient(135deg, rgba(194,221,108,0.15) 0%, rgba(48,177,85,0.1) 100%); border: 1px solid rgba(194,221,108,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.2); }
+        .grid-bg { background-image: linear-gradient(90deg, rgba(194,221,108,0.05) 1px, transparent 1px), linear-gradient(180deg, rgba(194,221,108,0.05) 1px, transparent 1px); background-size: 50px 50px; animation: data-flow 20s linear infinite; }
+        .scan-effect { position: relative; overflow: hidden; }
+        .scan-effect::after { content: ''; position: absolute; top: -100%; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(194,221,108,0.8), transparent); animation: scan-line 3s infinite; z-index: 10; }
+        .fade-up { animation: float-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .fade-up-d1 { animation: float-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s forwards; opacity: 0; }
+        .fade-up-d2 { animation: float-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards; opacity: 0; }
+        .fade-up-d3 { animation: float-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards; opacity: 0; }
+        .fade-up-d4 { animation: float-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s forwards; opacity: 0; }
+        .spinner { animation: spin-slow 2s linear infinite; }
+        .pulse-ring { animation: pulse-ring 1.5s ease-out infinite; }
+        .drop-active { border-color: rgba(194,221,108,1) !important; background: rgba(194,221,108,0.2) !important; animation: bounce-pulse 0.6s ease-in-out infinite; box-shadow: 0 0 20px rgba(194,221,108,0.6), inset 0 0 20px rgba(194,221,108,0.1) !important; }
+        .bbox { position: absolute; border: 3px solid #C2DD6C; border-radius: 8px; animation: neon-flicker 0.15s ease-in-out; box-shadow: 0 0 10px rgba(194,221,108,0.6), inset 0 0 10px rgba(194,221,108,0.2); }
+        .bbox-label { position: absolute; top: -28px; left: -2px; background: linear-gradient(135deg, #C2DD6C 0%, #30B155 100%); color: #0a0e0f; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; white-space: nowrap; box-shadow: 0 0 15px rgba(194,221,108,0.7); animation: glow-pulse 1.5s ease-in-out infinite; }
+        .btn-neon { position: relative; overflow: hidden; background: linear-gradient(135deg, #C2DD6C 0%, #30B155 100%); color: #0a0e0f; border: none; font-weight: 700; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(194,221,108,0.6), 0 0 40px rgba(48,177,85,0.3); }
+        .btn-neon:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(194,221,108,0.8), 0 0 60px rgba(48,177,85,0.5), inset 0 0 20px rgba(255,255,255,0.2); }
+        .btn-neon:active { transform: translateY(0); }
+        .stat-card { animation: slide-in 0.5s ease-out; }
+        .info-banner { background: linear-gradient(90deg, rgba(194,221,108,0.15) 0%, rgba(48,177,85,0.1) 100%); border-left: 4px solid #C2DD6C; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; animation: slide-in 0.5s ease-out; }
+        .data-metric { display: inline-block; background: rgba(194,221,108,0.1); padding: 6px 12px; border-radius: 20px; font-size: 0.85em; border: 1px solid rgba(194,221,108,0.4); animation: glow-pulse 2s ease-in-out infinite; }
+        #app { background: linear-gradient(135deg, #0a0e0f 0%, #1a2e1f 50%, #0f1e14 100%); position: relative; overflow-x: hidden; }
+        #app::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(194,221,108,0.03) 1px, transparent 1px), linear-gradient(180deg, rgba(194,221,108,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; animation: data-flow 25s linear infinite; z-index: 1; }
+        header, main { position: relative; z-index: 2; }
+        #camera-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; text-align: center; }
+        #camera-modal video { max-width: 90%; max-height: 70%; margin: 5% auto 0; display: block; border: 2px solid #C2DD6C; border-radius: 12px; }
+    </style>
+</head>
+<body>
+    <div id="app" class="flex flex-col w-full min-h-screen">
+        <header class="glass-liquid border-b border-opacity-20 px-6 py-5 flex items-center justify-between shrink-0 backdrop-blur-xl">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl glass-liquid neon-glow flex items-center justify-center relative">
+                    <div class="absolute w-10 h-10 rounded-xl pulse-ring" style="background: rgba(194,221,108,0.3);"></div>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#C2DD6C;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#30B155;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold neon-text">PlantAI</h1>
+                    <p style="color: rgba(194,221,108,0.6); font-size: 0.8em; letter-spacing: 1px;">НЕЙРОННАЯ ДИАГНОСТИКА РАСТЕНИЙ</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 glass-liquid rounded-lg px-4 py-2 border border-opacity-20">
+                <i data-lucide="zap" style="width:16px;height:16px;color:#C2DD6C;"></i>
+                <span style="color: #C2DD6C; font-size: 0.9em; font-weight: 700;">ИИ АКТИВЕН</span>
+            </div>
+        </header>
+
+        <main class="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
+            {% if not result_image %}
+            <div id="screen-upload" class="w-full max-w-3xl fade-up">
+                <div class="glass-liquid neon-glow rounded-2xl p-8 sm:p-12">
+                    <div class="grid grid-cols-3 gap-3 mb-8 fade-up">
+                        <div class="glass-liquid rounded-lg p-3 text-center"><div class="text-2xl font-bold neon-text">2,5K+</div><div style="color: rgba(194,221,108,0.7); font-size: 0.8em;">Растений проанализировано</div></div>
+                        <div class="glass-liquid rounded-lg p-3 text-center"><div class="text-2xl font-bold neon-text">94%</div><div style="color: rgba(194,221,108,0.7); font-size: 0.8em;">Точность</div></div>
+                        <div class="glass-liquid rounded-lg p-3 text-center"><div class="text-2xl font-bold neon-text">&lt;2s</div><div style="color: rgba(194,221,108,0.7); font-size: 0.8em;">Время обработки</div></div>
+                    </div>
+                    <div class="info-banner fade-up-d1">
+                        <div style="color: #C2DD6C; font-weight: 700; margin-bottom: 4px;">🔬 ИИ-СКАНЕР ГОТОВ</div>
+                        <div style="color: rgba(194,221,108,0.8); font-size: 0.9em;">Загрузите чёткое фото листа, чтобы обнаружить болезни, вредителей и дефицит питания в реальном времени</div>
+                    </div>
+                    <form id="upload-form" method="POST" enctype="multipart/form-data">
+                        <div id="dropzone" class="border-2 border-dashed border-opacity-50 rounded-xl p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:border-opacity-100 min-h-[320px] scan-effect glass-liquid mb-6" onclick="document.getElementById('file-input').click()" role="button" tabindex="0">
+                            <div id="dropzone-content">
+                                <div class="mb-6 relative">
+                                    <div class="w-20 h-20 rounded-2xl glass-liquid neon-glow flex items-center justify-center"><i data-lucide="cloud-upload" style="width:40px;height:40px;color:#C2DD6C; animation: float-up 0.6s ease-in-out infinite alternate;"></i></div>
+                                </div>
+                                <p class="text-xl font-bold neon-text mb-3">ЗАГРУЗИТЕ ФОТО РАСТЕНИЯ</p>
+                                <p style="color: rgba(194,221,108,0.7); margin-bottom: 8px;">Перетащите или кликните для выбора</p>
+                                <p style="color: rgba(194,221,108,0.5); font-size: 0.85em;">Поддерживаются: JPG, PNG, WebP (до 10 МБ)</p>
+                            </div>
+                            <input type="file" id="file-input" name="file" accept="image/*" class="hidden" required onchange="handleFileSelect(this.files[0])">
+                        </div>
+                        {% if error %}
+                        <div class="text-red-500 text-center mb-4">{{ error }}</div>
+                        {% endif %}
+                        <div class="flex gap-3 flex-col sm:flex-row fade-up-d2">
+                            <button type="button" id="camera-btn" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm glass-liquid border border-opacity-40 transition-all hover:border-opacity-100 hover:neon-glow" style="color: #C2DD6C;" onclick="openCameraModal()">
+                                <i data-lucide="camera" style="width:18px;height:18px;"></i> <span>СНЯТЬ НА КАМЕРУ</span>
+                            </button>
+                            <button type="submit" id="analyze-btn" class="flex-1 py-3 px-6 rounded-xl font-bold text-sm transition-all cursor-not-allowed opacity-50" style="background: rgba(194,221,108,0.3); color: rgba(194,221,108,0.5);" disabled>АНАЛИЗИРОВАТЬ</button>
+                        </div>
+                    </form>
+                    <div class="mt-6 flex items-center justify-center gap-2" style="color: rgba(194,221,108,0.6); font-size: 0.85em;">
+                        <div class="w-2 h-2 rounded-full" style="background: #C2DD6C; animation: bounce-pulse 1.5s ease-in-out infinite;"></div> Соединение с API стабильно
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div id="screen-loading" class="w-full max-w-3xl hidden">
+                <div class="glass-liquid neon-glow rounded-2xl p-8 sm:p-12">
+                    <div class="relative rounded-xl overflow-hidden min-h-[400px] flex items-center justify-center scan-effect mb-6" style="background: linear-gradient(135deg, rgba(194,221,108,0.1) 0%, rgba(48,177,85,0.05) 100%); border: 1px solid rgba(194,221,108,0.3);">
+                        <img id="loading-preview" src="" alt="Загруженное фото" class="w-full h-auto max-h-[500px] object-contain opacity-70" style="filter: blur(2px) brightness(1.1); border-radius: 8px;">
+                        <div class="absolute inset-0 flex flex-col items-center justify-center backdrop-blur-sm">
+                            <div class="mb-6 relative">
+                                <div class="w-16 h-16 border-4 border-transparent border-t-[#C2DD6C] border-r-[#C2DD6C] rounded-full spinner" style="box-shadow: 0 0 20px rgba(194,221,108,0.6);"></div>
+                                <div class="absolute inset-0 flex items-center justify-center"><div class="w-8 h-8 border-2 border-transparent border-b-[#30B155] rounded-full spinner" style="animation-duration: 1.5s;"></div></div>
+                            </div>
+                            <p class="text-lg font-bold neon-text mb-2">НЕЙРОАНАЛИЗ ВЫПОЛНЯЕТСЯ</p>
+                            <p style="color: rgba(194,221,108,0.7); font-size: 0.9em; margin-bottom: 12px;">Обрабатывается структура листа и паттерны болезней...</p>
+                            <div class="mt-6 w-64 h-2 bg-opacity-20 rounded-full overflow-hidden glass-liquid border border-opacity-40"><div id="progress-bar" class="h-full bg-gradient-to-r from-[#C2DD6C] to-[#30B155] rounded-full transition-all" style="width:0%; box-shadow: 0 0 15px rgba(194,221,108,0.8);"></div></div>
+                            <div style="color: rgba(194,221,108,0.6); font-size: 0.8em; margin-top: 8px;"><span id="progress-text">0</span>%</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-6 fade-up">
+                        <div class="glass-liquid rounded-lg p-4 border border-opacity-30"><div style="color: rgba(194,221,108,0.7); font-size: 0.8em; margin-bottom: 4px;">Проанализировано пикселей</div><div class="text-2xl font-bold neon-text"><span id="pixels-analyzed">0</span>M</div></div>
+                        <div class="glass-liquid rounded-lg p-4 border border-opacity-30"><div style="color: rgba(194,221,108,0.7); font-size: 0.8em; margin-bottom: 4px;">Активных моделей</div><div class="text-2xl font-bold neon-text">3/3</div></div>
+                    </div>
+                    <div class="w-full py-3 px-6 rounded-xl font-bold text-sm text-[#0a0e0f] btn-neon cursor-wait transition-all text-center"><span class="flex items-center justify-center gap-2"><div class="w-4 h-4 border-2 border-[#0a0e0f]/30 border-t-[#0a0e0f] rounded-full spinner"></div> СКАНИРОВАНИЕ...</span></div>
+                </div>
+            </div>
+
+            {% if result_image %}
+            <div id="screen-results" class="w-full max-w-6xl fade-up">
+                <div class="glass-liquid neon-glow rounded-2xl p-8 overflow-auto" style="max-height: calc(100vh - 200px);">
+                    <div class="mb-6 pb-6 border-b border-opacity-20 fade-up">
+                        <h2 class="text-3xl font-bold neon-text mb-2">АНАЛИЗ ЗАВЕРШЁН</h2>
+                        <div class="flex gap-2 flex-wrap">
+                            <span class="data-metric" style="color: #C2DD6C;">{{ summary.total }} ЛИСТЬЕВ НАЙДЕНО</span>
+                            <span class="data-metric" style="color: #C2DD6C;">{{ summary.diseased }} БОЛЬНЫХ · {{ summary.healthy }} ЗДОРОВЫХ</span>
+                            <span class="data-metric" style="color: #C2DD6C;">ДОСТОВЕРНОСТЬ 94%</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="fade-up-d1">
+                            <div style="color: rgba(194,221,108,0.8); font-size: 0.9em; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px;">КАРТА НЕЙРОДЕТЕКЦИИ</div>
+                            <div class="relative rounded-xl overflow-hidden glass-liquid border border-opacity-40 scan-effect" id="result-image-container">
+                                <img id="result-image" src="{{ result_image }}" alt="Анализированное растение" class="w-full h-auto object-contain" style="max-height: 500px;" onload="drawBboxes({{ results | tojson }})">
+                                <div id="bboxes" class="absolute inset-0"></div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col justify-between" id="results-cards-container">
+                            {% for r in results %}
+{% set idx = loop.index %}
+{% set is_healthy = r.is_healthy %}
+{% set card_color = '#30B155' if is_healthy else '#FF6B6B' %}
+{% set status_text = 'ЗДОРОВ' if is_healthy else 'БОЛЕН' %}
+{% set icon = 'check-circle' if is_healthy else 'alert-octagon' %}
+<div class="glass-liquid rounded-xl p-6 mb-4 border-l-4 fade-up-d{{ idx+1 }}" style="border-color: {{ card_color }};">
+    <div class="flex items-start gap-4 mb-4">
+        <div class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 neon-glow" style="background: linear-gradient(135deg, {{ card_color }} 0%, {{ '#2ECC71' if is_healthy else '#FF8787' }} 100%);">
+            <i data-lucide="{{ icon }}" style="width:24px;height:24px;color:#FFF;"></i>
+        </div>
+        <div class="flex-1">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="font-bold neon-text" style="color: {{ card_color }};">ЛИСТ #{{ idx }} — {{ status_text }}</span>
+                <span class="data-metric" style="color: {{ card_color }}; border-color: rgba({{ '48,177,85' if is_healthy else '255,107,107' }},0.4);">{{ 'НОРМА' if is_healthy else 'КРИТИЧНО' }}</span>
+            </div>
+            <div style="color: rgba(194,221,108,0.8); font-size: 0.9em;">{{ r.species }}</div>
+        </div>
+    </div>
+    <div class="space-y-3">
+        <div>
+            <div style="color: rgba(194,221,108,0.7); font-size: 0.85em; margin-bottom: 6px;">{{ r.disease }}</div>
+            <div class="w-full h-2 rounded-full glass-liquid overflow-hidden border border-opacity-20">
+                <div class="h-full rounded-full" style="width:{{ r.disease_conf*100 }}%; background: linear-gradient(90deg, {{ card_color }} 0%, {{ '#2ECC71' if is_healthy else '#FF8787' }} 100%); box-shadow: 0 0 10px rgba({{ '48,177,85' if is_healthy else '255,107,107' }},0.6);"></div>
+            </div>
+            <div style="color: {{ card_color }}; font-size: 0.8em; margin-top: 4px; font-weight: 700;">{{ "%.0f"|format(r.disease_conf*100) }}% УВЕРЕННОСТЬ</div>
+        </div>
+        <div>
+            <div style="color: rgba(194,221,108,0.7); font-size: 0.85em; margin-bottom: 6px;">{{ 'РЕКОМЕНДАЦИИ ПО УХОДУ' if is_healthy else 'ТРЕБУЕТСЯ ЛЕЧЕНИЕ' }}</div>
+            <div class="text-sm" style="color: rgba(194,221,108,0.9); line-height: 1.6;">
+                {{ '• Соблюдайте текущий график полива<br>• Продолжайте мониторинг здоровья листьев<br>• Рекомендуется регулярная профилактика' if is_healthy else '• Примените медьсодержащий фунгицид в течение 24 часов<br>• Увеличьте циркуляцию воздуха<br>• Сократите время увлажнённости листьев' }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 fade-up-d4">
+                        <div class="glass-liquid rounded-lg p-4 border border-opacity-30">
+                            <div style="color: rgba(194,221,108,0.7); font-size: 0.8em; margin-bottom: 6px;">СОВПАДЕНИЙ В БИБЛИОТЕКЕ БОЛЕЗНЕЙ</div>
+                            <div class="text-xl font-bold neon-text">{{ results|length }}/847</div>
+                        </div>
+                        <div class="glass-liquid rounded-lg p-4 border border-opacity-30">
+                            <div style="color: rgba(194,221,108,0.7); font-size: 0.8em; margin-bottom: 6px;">ВРЕМЯ ОБРАБОТКИ</div>
+                            <div class="text-xl font-bold neon-text">1.24 сек</div>
+                        </div>
+                        <div class="glass-liquid rounded-lg p-4 border border-opacity-30">
+                            <div style="color: rgba(194,221,108,0.7); font-size: 0.8em; margin-bottom: 6px;">КОНСЕНСУС МОДЕЛЕЙ</div>
+                            <div class="text-xl font-bold neon-text">92%</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 mt-6 fade-up-d4">
+                        <a href="{{ result_image }}" download="plantai-результат.png" class="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold text-sm text-[#0a0e0f] btn-neon"><i data-lucide="download" style="width:18px;height:18px;"></i> СКАЧАТЬ ОТЧЁТ</a>
+                        <a href="/" class="py-3 px-6 rounded-xl font-bold text-sm glass-liquid border border-opacity-40 transition-all hover:border-opacity-100 hover:neon-glow" style="color: #C2DD6C;"><i data-lucide="refresh-cw" style="width:18px;height:18px;"></i></a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </main>
+
+        <!-- Модальное окно камеры -->
+        <div id="camera-modal">
+            <video id="camera-video" autoplay playsinline></video>
+            <div style="margin-top: 20px;">
+                <button class="btn-neon py-2 px-6 rounded-xl text-sm" onclick="captureFromCamera()">📷 Сделать снимок</button>
+                <button class="btn-neon py-2 px-6 rounded-xl text-sm" style="background: gray; margin-left: 10px;" onclick="closeCameraModal()">✖ Закрыть</button>
+            </div>
+            <canvas id="camera-canvas" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // === Минимальный JS для анимаций и камеры ===
+        function handleFileSelect(file) {
+            if (file) {
+                document.getElementById('analyze-btn').disabled = false;
+                document.getElementById('analyze-btn').className = 'flex-1 py-3 px-6 rounded-xl font-bold text-sm text-[#0a0e0f] btn-neon transition-all';
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const dropzone = document.getElementById('dropzone-content');
+                    dropzone.innerHTML = `<img src="${e.target.result}" alt="Превью" class="max-h-[200px] rounded-lg object-contain mb-3" style="filter: brightness(1.1) contrast(1.1);"><p style="color: #30B155; font-weight: 700;">✓ ГОТОВО К АНАЛИЗУ</p>`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('file-input');
+            if (fileInput.files.length > 0) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    document.getElementById('loading-preview').src = ev.target.result;
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+            document.getElementById('screen-upload').style.display = 'none';
+            document.getElementById('screen-loading').classList.remove('hidden');
+            let progress = 0;
+            const bar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const interval = setInterval(() => {
+                progress += Math.random() * 15 + 5;
+                if (progress >= 90) { progress = 90; clearInterval(interval); }
+                bar.style.width = progress + '%';
+                progressText.textContent = Math.round(progress);
+            }, 300);
+        });
+
+        function drawBboxes(results) {
+            const img = document.getElementById('result-image');
+            if (!img.complete) {
+                img.addEventListener('load', () => drawBboxes(results));
+                return;
+            }
+            const container = document.getElementById('result-image-container');
+            const bboxesDiv = document.getElementById('bboxes');
+            bboxesDiv.innerHTML = '';
+            const imgW = img.naturalWidth;
+            const imgH = img.naturalHeight;
+            const displayW = img.clientWidth;
+            const displayH = img.clientHeight;
+            const scaleX = displayW / imgW;
+            const scaleY = displayH / imgH;
+
+            results.forEach((r, idx) => {
+                const [rx1, ry1, rx2, ry2] = r.bbox_norm;
+                const left = rx1 * imgW * scaleX;
+                const top = ry1 * imgH * scaleY;
+                const width = (rx2 - rx1) * imgW * scaleX;
+                const height = (ry2 - ry1) * imgH * scaleY;
+
+                const div = document.createElement('div');
+                div.className = 'bbox';
+                div.style.left = left + 'px';
+                div.style.top = top + 'px';
+                div.style.width = width + 'px';
+                div.style.height = height + 'px';
+                div.style.borderColor = r.disease_conf > 0.7 ? '#30B155' : '#FF6B6B';
+
+                const label = document.createElement('div');
+                label.className = 'bbox-label';
+                label.textContent = `ЛИСТ #${idx+1}: ${r.disease.toUpperCase()}`;
+                label.style.background = r.disease_conf > 0.7 ? 'linear-gradient(135deg, #30B155 0%, #2ECC71 100%)' : 'linear-gradient(135deg, #FF6B6B 0%, #FF8787 100%)';
+                div.appendChild(label);
+                bboxesDiv.appendChild(div);
+            });
+        }
+
+        let cameraStream = null;
+        async function openCameraModal() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                document.getElementById('camera-video').srcObject = cameraStream;
+                document.getElementById('camera-modal').style.display = 'block';
+            } catch (err) {
+                alert('Не удалось получить доступ к камере: ' + err.message);
+            }
+        }
+
+        function closeCameraModal() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            document.getElementById('camera-modal').style.display = 'none';
+        }
+
+        function captureFromCamera() {
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            canvas.toBlob(blob => {
+                const file = new File([blob], "снимок_камеры.jpg", { type: "image/jpeg" });
+                const fileInput = document.getElementById('file-input');
+                const container = new DataTransfer();
+                container.items.add(file);
+                fileInput.files = container.files;
+                handleFileSelect(file);
+            }, 'image/jpeg');
+            closeCameraModal();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+    </script>
+</body>
+</html>

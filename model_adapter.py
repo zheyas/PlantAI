@@ -7,7 +7,82 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# ---------- Словарь перевода болезней ----------
+# ================== ВСТРОЕННЫЕ СЛОВАРИ (больше не нужны JSON) ==================
+SPECIES_CLASSES = {
+    "Apple": 0,
+    "Bell_pepper": 1,
+    "Blueberry": 2,
+    "Cherry": 3,
+    "Corn": 4,
+    "grape": 5,
+    "Peach": 6,
+    "Potato": 7,
+    "Raspberry": 8,
+    "Soyabean": 9,
+    "Squash": 10,
+    "Strawberry": 11,
+    "Tomato": 12
+}
+
+DISEASE_CLASSES = {
+    "Apple": {
+        0: "Apple Scab Leaf",
+        1: "Apple leaf",
+        2: "Apple rust leaf"
+    },
+    "Bell_pepper": {
+        0: "Bell_pepper leaf",
+        1: "Bell_pepper leaf spot"
+    },
+    "Blueberry": {
+        0: "Blueberry leaf"
+    },
+    "Cherry": {
+        0: "Cherry leaf"
+    },
+    "Corn": {
+        0: "Corn Gray leaf spot",
+        1: "Corn leaf blight",
+        2: "Corn rust leaf"
+    },
+    "grape": {
+        0: "grape leaf",
+        1: "grape leaf black rot"
+    },
+    "Peach": {
+        0: "Peach leaf"
+    },
+    "Potato": {
+        0: "Potato leaf early blight",
+        1: "Potato leaf late blight",
+        2: "Potato leaf"
+    },
+    "Raspberry": {
+        0: "Raspberry leaf"
+    },
+    "Soyabean": {
+        0: "Soyabean leaf"
+    },
+    "Squash": {
+        0: "Squash Powdery mildew leaf",
+        1: "Squash leaf"
+    },
+    "Strawberry": {
+        0: "Strawberry leaf"
+    },
+    "Tomato": {
+        0: "Tomato Early blight leaf",
+        1: "Tomato Septoria leaf spot",
+        2: "Tomato leaf bacterial spot",
+        3: "Tomato leaf late blight",
+        4: "Tomato leaf mosaic virus",
+        5: "Tomato leaf yellow virus",
+        6: "Tomato leaf",
+        7: "Tomato mold leaf",
+        8: "Tomato two spotted spider mites leaf"
+    }
+}
+
 DISEASE_TRANSLATIONS = {
     "Apple Scab Leaf": "Парша яблони",
     "Apple leaf": "Здоровый лист яблони",
@@ -38,35 +113,25 @@ DISEASE_TRANSLATIONS = {
     "Tomato two spotted spider mites leaf": "Паутинный клещ томата",
     "grape leaf black rot": "Чёрная гниль винограда",
     "grape leaf": "Здоровый лист винограда",
-    "Bell_pepper leaf spot": "Пятнистость листьев болгарского перца",
 }
-# ----------------------------------------------
-
+# =============================================================================
 
 class ModelAdapter:
-    """
-    Адаптер, преобразующий сырые результаты моделей в унифицированный формат.
-    Использует паттерн Adapter для разделения ответственности:
-        - загрузка/хранение моделей (модели),
-        - логика пред- и постобработки (адаптер),
-        - HTTP-представление (маршруты Flask).
-    """
-
-    def __init__(self, detector, species_model, species_names,
-                 disease_models, disease_classes, transform):
+    def __init__(self, detector, species_model, disease_models, transform):
         self.detector = detector
         self.species_model = species_model
-        self.species_names = species_names
         self.disease_models = disease_models
-        self.disease_classes = disease_classes
         self.transform = transform
         self.device = next(species_model.parameters()).device
 
+        # Индексы видов
+        self.species_names = {v: k for k, v in SPECIES_CLASSES.items()}
+
+        # Маппинги болезней
+        self.disease_classes = DISEASE_CLASSES
+
     def _is_healthy(self, species: str, original_disease: str) -> bool:
-        """
-        Определяет, является ли предсказанный класс болезни «здоровым» для данного вида.
-        Работает с оригинальным (английским) названием болезни.
-        """
+        """Определяет, является ли класс болезни здоровым."""
         healthy_pattern = f"{species} leaf"
         if original_disease == healthy_pattern:
             return True
@@ -75,10 +140,6 @@ class ModelAdapter:
         return False
 
     def predict(self, image_path: Path, conf=0.5) -> dict:
-        """
-        Основной метод: принимает путь к изображению, возвращает адаптированный ответ.
-        """
-        # --- Шаг 1: Детекция листьев ---
         leaves, img_rgb = self._detect_leaves(image_path, conf)
 
         if not leaves:
@@ -88,7 +149,6 @@ class ModelAdapter:
                 'summary': {'total': 0, 'diseased': 0, 'healthy': 0}
             }
 
-        # --- Шаг 2: Классификация каждого листа ---
         h, w, _ = img_rgb.shape
         results = []
         for leaf in leaves:
@@ -96,16 +156,13 @@ class ModelAdapter:
             species, species_conf = self._classify_species(tensor)
             original_disease, disease_conf = self._classify_disease(species, tensor)
 
-            # Определяем здоров/болен по оригинальному названию
             is_healthy = self._is_healthy(species, original_disease)
-
-            # Переводим болезнь на русский
             disease_ru = DISEASE_TRANSLATIONS.get(original_disease, original_disease)
 
             x1, y1, x2, y2 = leaf['bbox']
             results.append({
                 'species': species,
-                'disease': disease_ru,          # Теперь на русском
+                'disease': disease_ru,
                 'species_conf': float(species_conf),
                 'disease_conf': float(disease_conf),
                 'bbox_norm': [x1/w, y1/h, x2/w, y2/h],
@@ -114,10 +171,7 @@ class ModelAdapter:
                 'is_healthy': is_healthy
             })
 
-        # --- Шаг 3: Отрисовка bounding boxes ---
         result_img = self._draw_boxes(img_rgb, results)
-
-        # --- Шаг 4: Составление статистики ---
         diseased = sum(1 for r in results if not r['is_healthy'])
         healthy = len(results) - diseased
 
@@ -132,7 +186,7 @@ class ModelAdapter:
             }
         }
 
-    # ---------- приватные методы ----------
+    # -----------------------------------------------------------------
     def _detect_leaves(self, image_path, conf):
         img = cv2.imread(str(image_path))
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -177,7 +231,6 @@ class ModelAdapter:
             x1, y1, x2, y2 = r['bbox_abs']
             color = (0, 255, 0) if r['is_healthy'] else (255, 165, 0)
             draw.rectangle([x1, y1, x2, y2], outline=color, width=3)
-            # Надпись на русском
             label = f"{r['species']}: {r['disease']}"
             draw.text((x1, y1-10), label, fill=color, font=font)
         return img

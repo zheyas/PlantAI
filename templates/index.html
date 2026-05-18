@@ -9,68 +9,47 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Space Mono', monospace; }
-        @keyframes glow-pulse { 0%, 100% { text-shadow: 0 0 10px rgba(194,221,108,0.8), 0 0 20px rgba(48,177,85,0.4); } 50% { text-shadow: 0 0 20px rgba(194,221,108,1), 0 0 40px rgba(48,177,85,0.6), 0 0 60px rgba(194,221,108,0.5); } }
-        @keyframes float-up { 0% { opacity: 0; transform: translateY(30px) scale(0.9); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes scan-line { 0% { top: -100%; } 100% { top: 100%; } }
-        @keyframes data-flow { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
-        @keyframes neon-flicker { 0%, 100% { opacity: 1; } 4% { opacity: 0.8; } 8% { opacity: 1; } 12% { opacity: 0.85; } }
-        @keyframes spin-slow { to { transform: rotate(360deg); } }
-        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
-        @keyframes slide-in { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes bounce-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        body { box-sizing: border-box; overflow: auto; }
-        html, body, #app { min-height: 100%; }
-        .neon-text { animation: glow-pulse 2.5s ease-in-out infinite; font-weight: 700; letter-spacing: 2px; }
-        .neon-glow { box-shadow: 0 0 10px rgba(194,221,108,0.6), 0 0 20px rgba(48,177,85,0.3), inset 0 0 10px rgba(194,221,108,0.1); }
-        .glass-liquid { backdrop-filter: blur(20px) saturate(180%); background: linear-gradient(135deg, rgba(194,221,108,0.15) 0%, rgba(48,177,85,0.1) 100%); border: 1px solid rgba(194,221,108,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.2); }
-        .grid-bg { background-image: linear-gradient(90deg, rgba(194,221,108,0.05) 1px, transparent 1px), linear-gradient(180deg, rgba(194,221,108,0.05) 1px, transparent 1px); background-size: 50px 50px; animation: data-flow 20s linear infinite; }
-        .scan-effect { position: relative; overflow: hidden; }
-        .scan-effect::after { content: ''; position: absolute; top: -100%; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(194,221,108,0.8), transparent); animation: scan-line 3s infinite; z-index: 10; }
-        .fade-up { animation: float-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-        .fade-up-d1 { animation: float-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s forwards; opacity: 0; }
-        .fade-up-d2 { animation: float-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards; opacity: 0; }
-        .fade-up-d3 { animation: float-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards; opacity: 0; }
-        .fade-up-d4 { animation: float-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s forwards; opacity: 0; }
-        .spinner { animation: spin-slow 2s linear infinite; }
-        .pulse-ring { animation: pulse-ring 1.5s ease-out infinite; }
-        .drop-active { border-color: rgba(194,221,108,1) !important; background: rgba(194,221,108,0.2) !important; animation: bounce-pulse 0.6s ease-in-out infinite; box-shadow: 0 0 20px rgba(194,221,108,0.6), inset 0 0 20px rgba(194,221,108,0.1) !important; }
-        .bbox { position: absolute; border: 3px solid #C2DD6C; border-radius: 8px; animation: neon-flicker 0.15s ease-in-out; box-shadow: 0 0 10px rgba(194,221,108,0.6), inset 0 0 10px rgba(194,221,108,0.2); }
-        .bbox-label { position: absolute; top: -28px; left: -2px; background: linear-gradient(135deg, #C2DD6C 0%, #30B155 100%); color: #0a0e0f; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; white-space: nowrap; box-shadow: 0 0 15px rgba(194,221,108,0.7); animation: glow-pulse 1.5s ease-in-out infinite; }
-        .btn-neon { position: relative; overflow: hidden; background: linear-gradient(135deg, #C2DD6C 0%, #30B155 100%); color: #0a0e0f; border: none; font-weight: 700; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(194,221,108,0.6), 0 0 40px rgba(48,177,85,0.3); }
-        .btn-neon:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(194,221,108,0.8), 0 0 60px rgba(48,177,85,0.5), inset 0 0 20px rgba(255,255,255,0.2); }
-        .btn-neon:active { transform: translateY(0); }
-        .stat-card { animation: slide-in 0.5s ease-out; }
-        .info-banner { background: linear-gradient(90deg, rgba(194,221,108,0.15) 0%, rgba(48,177,85,0.1) 100%); border-left: 4px solid #C2DD6C; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; animation: slide-in 0.5s ease-out; }
-        .data-metric { display: inline-block; background: rgba(194,221,108,0.1); padding: 6px 12px; border-radius: 20px; font-size: 0.85em; border: 1px solid rgba(194,221,108,0.4); animation: glow-pulse 2s ease-in-out infinite; }
-        #app { background: linear-gradient(135deg, #0a0e0f 0%, #1a2e1f 50%, #0f1e14 100%); position: relative; overflow-x: hidden; }
-        #app::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(194,221,108,0.03) 1px, transparent 1px), linear-gradient(180deg, rgba(194,221,108,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; animation: data-flow 25s linear infinite; z-index: 1; }
-        header, main { position: relative; z-index: 2; }
-        #camera-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; text-align: center; }
-        #camera-modal video { max-width: 90%; max-height: 70%; margin: 5% auto 0; display: block; border: 2px solid #C2DD6C; border-radius: 12px; }
-
-        /* Адаптивность */
-        @media (max-width: 1024px) {
-            .grid-cols-3 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-            .grid-cols-2 { grid-template-columns: 1fr; }
-            .text-3xl { font-size: 1.5rem !important; }
-            .text-2xl { font-size: 1.25rem !important; }
-            .text-xl { font-size: 1.1rem !important; }
-            .p-12 { padding: 1.5rem !important; }
-            .p-8 { padding: 1rem !important; }
-            .max-w-3xl, .max-w-6xl { max-width: 100% !important; }
-            #dropzone { min-height: 200px; padding: 1rem; }
-            #result-image-container { aspect-ratio: auto; max-height: 300px; }
-            .bbox-label { font-size: 9px; top: -22px; padding: 2px 6px; }
-            .btn-neon { font-size: 0.8rem; padding: 0.5rem 1rem; }
-        }
-
-        @media (max-width: 640px) {
-            header { flex-direction: column; gap: 0.5rem; text-align: center; }
-            .data-metric { font-size: 0.7em; padding: 4px 8px; }
-            .info-banner { font-size: 0.8em; }
-            #screen-results .grid { grid-template-columns: 1fr; }
-            .fade-up-d1, .fade-up-d2, .fade-up-d3, .fade-up-d4 { animation: float-up 0.4s forwards; }
-        }
+        @keyframes glow-pulse { 0%,100%{text-shadow:0 0 10px rgba(194,221,108,0.8),0 0 20px rgba(48,177,85,0.4)}50%{text-shadow:0 0 20px rgba(194,221,108,1),0 0 40px rgba(48,177,85,0.6),0 0 60px rgba(194,221,108,0.5)} }
+        @keyframes float-up { 0%{opacity:0;transform:translateY(30px) scale(0.9)}100%{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes scan-line { 0%{top:-100%}100%{top:100%} }
+        @keyframes data-flow { 0%{background-position:0% 50%}100%{background-position:100% 50%} }
+        @keyframes neon-flicker { 0%,100%{opacity:1}4%{opacity:0.8}8%{opacity:1}12%{opacity:0.85} }
+        @keyframes spin-slow { to{transform:rotate(360deg)} }
+        @keyframes pulse-ring { 0%{transform:scale(0.8);opacity:1}100%{transform:scale(1.5);opacity:0} }
+        @keyframes slide-in { from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)} }
+        @keyframes bounce-pulse { 0%,100%{transform:scale(1)}50%{transform:scale(1.05)} }
+        body { box-sizing:border-box; overflow:auto; }
+        html,body,#app { min-height:100%; }
+        .neon-text { animation:glow-pulse 2.5s ease-in-out infinite; font-weight:700; letter-spacing:2px; }
+        .neon-glow { box-shadow:0 0 10px rgba(194,221,108,0.6),0 0 20px rgba(48,177,85,0.3),inset 0 0 10px rgba(194,221,108,0.1); }
+        .glass-liquid { backdrop-filter:blur(20px) saturate(180%); background:linear-gradient(135deg, rgba(194,221,108,0.15) 0%,rgba(48,177,85,0.1) 100%); border:1px solid rgba(194,221,108,0.3); box-shadow:0 8px 32px rgba(0,0,0,0.2),inset 0 1px 1px rgba(255,255,255,0.2); }
+        .grid-bg { background-image:linear-gradient(90deg, rgba(194,221,108,0.05) 1px,transparent 1px),linear-gradient(180deg, rgba(194,221,108,0.05) 1px,transparent 1px); background-size:50px 50px; animation:data-flow 20s linear infinite; }
+        .scan-effect { position:relative; overflow:hidden; }
+        .scan-effect::after { content:''; position:absolute; top:-100%; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, rgba(194,221,108,0.8), transparent); animation:scan-line 3s infinite; z-index:10; }
+        .fade-up { animation:float-up 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+        .fade-up-d1 { animation:float-up 0.6s 0.1s forwards; opacity:0; }
+        .fade-up-d2 { animation:float-up 0.6s 0.2s forwards; opacity:0; }
+        .fade-up-d3 { animation:float-up 0.6s 0.3s forwards; opacity:0; }
+        .fade-up-d4 { animation:float-up 0.6s 0.4s forwards; opacity:0; }
+        .spinner { animation:spin-slow 2s linear infinite; }
+        .pulse-ring { animation:pulse-ring 1.5s ease-out infinite; }
+        .drop-active { border-color:rgba(194,221,108,1)!important; background:rgba(194,221,108,0.2)!important; animation:bounce-pulse 0.6s ease-in-out infinite; box-shadow:0 0 20px rgba(194,221,108,0.6),inset 0 0 20px rgba(194,221,108,0.1)!important; }
+        .bbox { position:absolute; border:3px solid #C2DD6C; border-radius:8px; animation:neon-flicker 0.15s ease-in-out; box-shadow:0 0 10px rgba(194,221,108,0.6),inset 0 0 10px rgba(194,221,108,0.2); }
+        .bbox-label { position:absolute; top:-28px; left:-2px; background:linear-gradient(135deg,#C2DD6C 0%,#30B155 100%); color:#0a0e0f; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; white-space:nowrap; box-shadow:0 0 15px rgba(194,221,108,0.7); animation:glow-pulse 1.5s ease-in-out infinite; }
+        .btn-neon { position:relative; overflow:hidden; background:linear-gradient(135deg,#C2DD6C 0%,#30B155 100%); color:#0a0e0f; border:none; font-weight:700; transition:all 0.3s ease; box-shadow:0 0 20px rgba(194,221,108,0.6),0 0 40px rgba(48,177,85,0.3); }
+        .btn-neon:hover { transform:translateY(-2px); box-shadow:0 0 30px rgba(194,221,108,0.8),0 0 60px rgba(48,177,85,0.5),inset 0 0 20px rgba(255,255,255,0.2); }
+        .btn-neon:active { transform:translateY(0); }
+        .stat-card { animation:slide-in 0.5s ease-out; }
+        .info-banner { background:linear-gradient(90deg, rgba(194,221,108,0.15) 0%,rgba(48,177,85,0.1) 100%); border-left:4px solid #C2DD6C; padding:12px 16px; border-radius:8px; margin-bottom:16px; animation:slide-in 0.5s ease-out; }
+        .data-metric { display:inline-block; background:rgba(194,221,108,0.1); padding:6px 12px; border-radius:20px; font-size:0.85em; border:1px solid rgba(194,221,108,0.4); animation:glow-pulse 2s ease-in-out infinite; }
+        #app { background:linear-gradient(135deg,#0a0e0f 0%,#1a2e1f 50%,#0f1e14 100%); position:relative; overflow-x:hidden; }
+        #app::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg, rgba(194,221,108,0.03) 1px,transparent 1px),linear-gradient(180deg, rgba(194,221,108,0.03) 1px,transparent 1px); background-size:40px 40px; pointer-events:none; animation:data-flow 25s linear infinite; z-index:1; }
+        header,main { position:relative; z-index:2; }
+        #live-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100; }
+        #live-video { width:100%; height:100%; object-fit:contain; }
+        #live-canvas { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; }
+        #live-controls { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:110; display:flex; gap:10px; }
+        #live-info-panel { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,14,15,0.95); border:2px solid #C2DD6C; border-radius:16px; padding:20px; z-index:120; max-width:90%; color:#C2DD6C; }
     </style>
 </head>
 <body>
@@ -129,7 +108,7 @@
                         <div class="text-red-500 text-center mb-4">{{ error }}</div>
                         {% endif %}
                         <div class="flex gap-3 flex-col sm:flex-row fade-up-d2">
-                            <button type="button" id="camera-btn" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm glass-liquid border border-opacity-40 transition-all hover:border-opacity-100 hover:neon-glow" style="color: #C2DD6C;" onclick="openCameraModal()">
+                            <button type="button" id="camera-btn" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm glass-liquid border border-opacity-40 transition-all hover:border-opacity-100 hover:neon-glow" style="color: #C2DD6C;" onclick="openLiveMode()">
                                 <i data-lucide="camera" style="width:18px;height:18px;"></i> <span>СНЯТЬ НА КАМЕРУ</span>
                             </button>
                             <button type="submit" id="analyze-btn" class="flex-1 py-3 px-6 rounded-xl font-bold text-sm transition-all cursor-not-allowed opacity-50" style="background: rgba(194,221,108,0.3); color: rgba(194,221,108,0.5);" disabled>АНАЛИЗИРОВАТЬ</button>
@@ -246,25 +225,31 @@
             {% endif %}
         </main>
 
-        <div id="camera-modal">
-            <video id="camera-video" autoplay playsinline></video>
-            <div style="margin-top: 20px;">
-                <button class="btn-neon py-2 px-6 rounded-xl text-sm" onclick="captureFromCamera()">📷 Сделать снимок</button>
-                <button class="btn-neon py-2 px-6 rounded-xl text-sm" style="background: gray; margin-left: 10px;" onclick="closeCameraModal()">✖ Закрыть</button>
+        <!-- LIVE MODAL -->
+        <div id="live-modal">
+            <video id="live-video" autoplay playsinline></video>
+            <canvas id="live-canvas"></canvas>
+            <div id="live-controls">
+                <button class="btn-neon py-2 px-4 rounded-xl text-sm" onclick="stopLiveMode()">✖ Закрыть</button>
+                <button id="live-details-btn" class="btn-neon py-2 px-4 rounded-xl text-sm" onclick="showLiveDetails()" disabled>ℹ Подробнее</button>
             </div>
-            <canvas id="camera-canvas" style="display:none;"></canvas>
+            <div id="live-info-panel">
+                <h3 id="live-info-title" class="font-bold mb-2"></h3>
+                <p id="live-info-text"></p>
+                <button class="btn-neon mt-4 py-1 px-4 rounded-xl text-sm" onclick="closeLiveInfo()">Закрыть</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // ==================== ОБЩИЕ ФУНКЦИИ (upload) ====================
         function handleFileSelect(file) {
             if (file) {
                 document.getElementById('analyze-btn').disabled = false;
                 document.getElementById('analyze-btn').className = 'flex-1 py-3 px-6 rounded-xl font-bold text-sm text-[#0a0e0f] btn-neon transition-all';
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const dropzone = document.getElementById('dropzone-content');
-                    dropzone.innerHTML = `<img src="${e.target.result}" alt="Превью" class="max-h-[200px] rounded-lg object-contain mb-3" style="filter: brightness(1.1) contrast(1.1);"><p style="color: #30B155; font-weight: 700;">✓ ГОТОВО К АНАЛИЗУ</p>`;
+                    document.getElementById('dropzone-content').innerHTML = `<img src="${e.target.result}" alt="Превью" class="max-h-[200px] rounded-lg object-contain mb-3" style="filter: brightness(1.1) contrast(1.1);"><p style="color: #30B155; font-weight: 700;">✓ ГОТОВО К АНАЛИЗУ</p>`;
                 };
                 reader.readAsDataURL(file);
             }
@@ -294,37 +279,23 @@
 
         function drawBboxes(results) {
             const img = document.getElementById('result-image');
-            if (!img.complete) {
-                img.addEventListener('load', () => drawBboxes(results));
-                return;
-            }
+            if (!img.complete) { img.addEventListener('load', () => drawBboxes(results)); return; }
             const container = document.getElementById('result-image-container');
             const bboxesDiv = document.getElementById('bboxes');
             bboxesDiv.innerHTML = '';
-            const imgW = img.naturalWidth;
-            const imgH = img.naturalHeight;
-            const displayW = img.clientWidth;
-            const displayH = img.clientHeight;
-            const scaleX = displayW / imgW;
-            const scaleY = displayH / imgH;
+            const imgW = img.naturalWidth, imgH = img.naturalHeight;
+            const displayW = img.clientWidth, displayH = img.clientHeight;
+            const scaleX = displayW / imgW, scaleY = displayH / imgH;
 
             results.forEach((r, idx) => {
                 const [rx1, ry1, rx2, ry2] = r.bbox_norm;
-                const left = rx1 * imgW * scaleX;
-                const top = ry1 * imgH * scaleY;
-                const width = (rx2 - rx1) * imgW * scaleX;
-                const height = (ry2 - ry1) * imgH * scaleY;
-
-                const div = document.createElement('div');
-                div.className = 'bbox';
-                div.style.left = left + 'px';
-                div.style.top = top + 'px';
-                div.style.width = width + 'px';
-                div.style.height = height + 'px';
+                const left = rx1 * imgW * scaleX, top = ry1 * imgH * scaleY;
+                const width = (rx2 - rx1) * imgW * scaleX, height = (ry2 - ry1) * imgH * scaleY;
+                const div = document.createElement('div'); div.className = 'bbox';
+                div.style.left = left + 'px'; div.style.top = top + 'px';
+                div.style.width = width + 'px'; div.style.height = height + 'px';
                 div.style.borderColor = r.is_healthy ? '#30B155' : '#FF6B6B';
-
-                const label = document.createElement('div');
-                label.className = 'bbox-label';
+                const label = document.createElement('div'); label.className = 'bbox-label';
                 label.textContent = `ЛИСТ #${idx+1}: ${r.disease.toUpperCase()}`;
                 label.style.background = r.is_healthy ? 'linear-gradient(135deg, #30B155 0%, #2ECC71 100%)' : 'linear-gradient(135deg, #FF6B6B 0%, #FF8787 100%)';
                 div.appendChild(label);
@@ -332,40 +303,92 @@
             });
         }
 
-        let cameraStream = null;
-        async function openCameraModal() {
+        // ==================== LIVE MODE ====================
+        let liveStream = null, liveInterval = null, lastLiveBoxes = [], lastDiseased = null;
+
+        async function openLiveMode() {
             try {
-                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                document.getElementById('camera-video').srcObject = cameraStream;
-                document.getElementById('camera-modal').style.display = 'block';
+                liveStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                document.getElementById('live-video').srcObject = liveStream;
+                document.getElementById('live-modal').style.display = 'block';
+                document.getElementById('live-details-btn').disabled = true;
+                startLiveScanning();
             } catch (err) {
                 alert('Не удалось получить доступ к камере: ' + err.message);
             }
         }
 
-        function closeCameraModal() {
-            if (cameraStream) {
-                cameraStream.getTracks().forEach(track => track.stop());
-                cameraStream = null;
+        function stopLiveMode() {
+            if (liveStream) {
+                liveStream.getTracks().forEach(t => t.stop());
+                liveStream = null;
             }
-            document.getElementById('camera-modal').style.display = 'none';
+            if (liveInterval) clearInterval(liveInterval);
+            document.getElementById('live-modal').style.display = 'none';
+            document.getElementById('live-canvas').getContext('2d').clearRect(0,0,9999,9999);
         }
 
-        function captureFromCamera() {
-            const video = document.getElementById('camera-video');
-            const canvas = document.getElementById('camera-canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            canvas.toBlob(blob => {
-                const file = new File([blob], "снимок_камеры.jpg", { type: "image/jpeg" });
-                const fileInput = document.getElementById('file-input');
-                const container = new DataTransfer();
-                container.items.add(file);
-                fileInput.files = container.files;
-                handleFileSelect(file);
-            }, 'image/jpeg');
-            closeCameraModal();
+        function startLiveScanning() {
+            liveInterval = setInterval(async () => {
+                const video = document.getElementById('live-video');
+                const canvas = document.getElementById('live-canvas');
+                if (video.readyState >= video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0);
+                    const frame = canvas.toDataURL('image/jpeg', 0.6);
+                    try {
+                        const res = await fetch('/api/detect_live', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ image: frame })
+                        });
+                        const data = await res.json();
+                        if (data.boxes) {
+                            lastLiveBoxes = data.boxes;
+                            drawLiveBoxes(data.boxes);
+                            const diseased = data.boxes.find(b => !b.is_healthy);
+                            if (diseased) {
+                                lastDiseased = diseased;
+                                document.getElementById('live-details-btn').disabled = false;
+                            } else {
+                                document.getElementById('live-details-btn').disabled = true;
+                            }
+                        }
+                    } catch (error) {
+                        console.error(error);
+                    }
+                }
+            }, 500);
+        }
+
+        function drawLiveBoxes(boxes) {
+            const canvas = document.getElementById('live-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const w = canvas.width, h = canvas.height;
+            boxes.forEach(box => {
+                const [x1, y1, x2, y2] = box.bbox_norm;
+                const left = x1 * w, top = y1 * h, right = x2 * w, bottom = y2 * h;
+                ctx.strokeStyle = box.is_healthy ? '#30B155' : '#FF6B6B';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(left, top, right - left, bottom - top);
+                ctx.fillStyle = box.is_healthy ? '#30B155' : '#FF6B6B';
+                ctx.font = '14px monospace';
+                ctx.fillText(box.species, left, top - 5);
+            });
+        }
+
+        function showLiveDetails() {
+            if (!lastDiseased) return;
+            document.getElementById('live-info-title').innerText = `${lastDiseased.species} — ${lastDiseased.disease}`;
+            document.getElementById('live-info-text').innerText = 'Статус: БОЛЕН\nРекомендации: обратитесь к специалисту.';
+            document.getElementById('live-info-panel').style.display = 'block';
+        }
+
+        function closeLiveInfo() {
+            document.getElementById('live-info-panel').style.display = 'none';
         }
 
         document.addEventListener('DOMContentLoaded', () => lucide.createIcons());

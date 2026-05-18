@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlantAI — Live сканирование</title>
+    <style>
+        body { margin: 0; background: #0a0e0f; color: #C2DD6C; font-family: monospace; }
+        #container { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+        video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; }
+        canvas { z-index: 10; }
+        #controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; gap: 10px; }
+        button { padding: 10px 20px; background: #C2DD6C; color: #0a0e0f; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        #info-panel { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10,14,15,0.9); border: 2px solid #C2DD6C; border-radius: 16px; padding: 20px; z-index: 30; max-width: 90%; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+    <div id="controls">
+        <button id="startBtn">▶ Запустить сканирование</button>
+        <button id="stopBtn" disabled>⏹ Остановить</button>
+        <button id="detailsBtn" disabled>ℹ Подробнее</button>
+    </div>
+    <div id="info-panel">
+        <h3 id="info-title"></h3>
+        <p id="info-text"></p>
+        <button onclick="closeInfo()">Закрыть</button>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let stream = null;
+        let intervalId = null;
+        let lastBoxes = [];
+        let lastDiseased = null; // последний больной лист
+
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = stream;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('detailsBtn').disabled = false;
+                startScanning();
+            } catch (err) {
+                alert('Ошибка доступа к камере: ' + err.message);
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+            if (intervalId) clearInterval(intervalId);
+            video.srcObject = null;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('detailsBtn').disabled = true;
+            lastBoxes = [];
+            lastDiseased = null;
+        }
+
+        function startScanning() {
+            intervalId = setInterval(() => {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    // Отправляем кадр на сервер
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+                    const frame = canvas.toDataURL('image/jpeg', 0.6);
+                    fetch('/api/detect_live', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: frame })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.boxes) {
+                            lastBoxes = data.boxes;
+                            drawBoxes(data.boxes);
+                        }
+                    })
+                    .catch(console.error);
+                }
+            }, 500); // каждые 500 мс
+        }
+
+        function drawBoxes(boxes) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const w = canvas.width;
+            const h = canvas.height;
+            boxes.forEach((box, idx) => {
+                const [x1, y1, x2, y2] = box.bbox_norm;
+                const left = x1 * w;
+                const top = y1 * h;
+                const right = x2 * w;
+                const bottom = y2 * h;
+                ctx.strokeStyle = box.is_healthy ? '#30B155' : '#FF6B6B';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(left, top, right - left, bottom - top);
+                // подпись
+                ctx.fillStyle = box.is_healthy ? '#30B155' : '#FF6B6B';
+                ctx.font = '14px monospace';
+                ctx.fillText(`${box.species}`, left, top - 5);
+            });
+            // Сохраняем первый больной для кнопки "Подробнее"
+            const diseased = boxes.find(b => !b.is_healthy);
+            if (diseased) lastDiseased = diseased;
+        }
+
+        function showDetails() {
+            if (!lastDiseased) return;
+            document.getElementById('info-title').innerText = `${lastDiseased.species} — ${lastDiseased.disease}`;
+            document.getElementById('info-text').innerText = `Статус: БОЛЕН\nУверенность: ${lastDiseased.disease_conf ?? '?'}%\nРекомендации: обратитесь к специалисту.`;
+            document.getElementById('info-panel').style.display = 'block';
+        }
+
+        function closeInfo() {
+            document.getElementById('info-panel').style.display = 'none';
+        }
+
+        document.getElementById('startBtn').addEventListener('click', startCamera);
+        document.getElementById('stopBtn').addEventListener('click', stopCamera);
+        document.getElementById('detailsBtn').addEventListener('click', showDetails);
+    </script>
+</body>
+</html>

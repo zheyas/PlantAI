@@ -1,3 +1,1 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4ad989e0dbe8cf945c14f514c41dc05ba1fba1c68a0ce093b8aa5786fa087a93
-size 184
+{"Apple": 0, "Bell_pepper": 1, "Blueberry": 2, "Cherry": 3, "Corn": 4, "Peach": 5, "Potato": 6, "Raspberry": 7, "Soyabean": 8, "Squash": 9, "Strawberry": 10, "Tomato": 11, "grape": 12}
